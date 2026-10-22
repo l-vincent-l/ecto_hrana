@@ -20,7 +20,11 @@ defmodule EctoHrana.Connection do
   @savepoint "ecto_hrana_savepoint"
 
   @impl true
-  def connect(opts), do: {:ok, %__MODULE__{client: Client.new(opts)}}
+  def connect(opts) do
+    with {:ok, client} <- Client.connect(opts) do
+      {:ok, %__MODULE__{client: client}}
+    end
+  end
 
   @impl true
   def disconnect(_err, %{client: %{baton: nil}}), do: :ok

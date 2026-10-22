@@ -25,7 +25,9 @@ defmodule EctoHrana.MixProject do
       {:req, "~> 0.7"},
       {:jason, "~> 1.4"},
       # only to compare with it (bench/compare.exs)
-      {:ecto_libsql, "~> 0.9.1", only: :dev}
+      {:ecto_libsql, "~> 0.9.1", only: :dev},
+      # Req.Test's fake servers
+      {:plug, "~> 1.16", only: :test}
     ]
   end
 end

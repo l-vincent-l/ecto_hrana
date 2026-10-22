@@ -1,19 +1,38 @@
 defmodule EctoHrana.Client do
   @moduledoc false
-  # libSQL's Hrana protocol over HTTP (the v2 pipeline endpoint): each request
-  # sends statements on a stream, identified by a baton. A stream is kept open
-  # (its baton kept) only during a transaction, and closed otherwise.
+  # libSQL's Hrana protocol over HTTP (the pipeline endpoint, in JSON): each
+  # request sends statements on a stream, identified by a baton. A stream is
+  # kept open (its baton kept) only during a transaction, and closed otherwise.
+  # Hrana 3 is used when the server has it, else Hrana 2, whose pipeline is
+  # the same.
 
-  defstruct [:req, :baton, :base_url]
+  defstruct [:req, :baton, :base_url, pipeline: "/v2/pipeline"]
 
   @type t :: %__MODULE__{}
 
   @doc """
   A client for the server at `:uri` (`libsql://`, `https://` or `http://`),
-  authenticated with `:auth_token` if given. `:req_options` are merged into
-  the `Req` request.
+  authenticated with `:auth_token` if given, using the latest version of
+  Hrana the server has. `:req_options` are merged into the `Req` request.
   """
-  def new(opts) do
+  @spec connect(keyword()) :: {:ok, t()} | {:error, EctoHrana.Error.t()}
+  def connect(opts) do
+    client = new(opts)
+
+    # `GET /v3` succeeds when the server has Hrana 3 over HTTP, with JSON.
+    case Req.get(client.req, url: "/v3") do
+      {:ok, %{status: status}} when status in 200..299 ->
+        {:ok, %{client | pipeline: "/v3/pipeline"}}
+
+      {:ok, _response} ->
+        {:ok, client}
+
+      {:error, exception} ->
+        {:error, %EctoHrana.Error{message: Exception.message(exception)}}
+    end
+  end
+
+  defp new(opts) do
     headers =
       case Keyword.get(opts, :auth_token) do
         nil -> []
@@ -51,7 +70,7 @@ defmodule EctoHrana.Client do
     req =
       if client.base_url, do: Req.merge(client.req, base_url: client.base_url), else: client.req
 
-    case Req.post(req, url: "/v2/pipeline", json: %{baton: client.baton, requests: requests}) do
+    case Req.post(req, url: client.pipeline, json: %{baton: client.baton, requests: requests}) do
       {:ok, %{status: 200, body: %{"results" => [result | _]} = body}} ->
         client =
           if keep_open?,
