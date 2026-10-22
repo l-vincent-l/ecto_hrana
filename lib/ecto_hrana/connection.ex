@@ -1,15 +1,41 @@
 defmodule EctoHrana.Connection do
   @moduledoc """
-  `DBConnection` to a libSQL server (Turso, Bunny Database, `sqld`) over
-  Hrana/HTTP. A connection holds no socket: it is the stream of its current
-  transaction, if any.
+  `DBConnection` driver for libSQL servers (Turso, Bunny Database, `sqld`),
+  over Hrana on HTTP. `Ecto.Adapters.Hrana` uses it; it can also be used on
+  its own:
 
-  Options:
+      {:ok, conn} = DBConnection.start_link(EctoHrana.Connection, uri: "http://127.0.0.1:8080")
+
+      query = %EctoHrana.Query{statement: "SELECT ?1 + 1"}
+      {:ok, _query, %EctoHrana.Result{rows: [[2]]}} = DBConnection.execute(conn, query, [1])
+
+  A connection holds no socket: HTTP requests go through `Req`'s connection
+  pool. What it holds is the server stream of its current transaction, if any
+  (see `Ecto.Adapters.Hrana` for how transactions use streams).
+
+  Connecting asks the server which version of Hrana it has, and fails if the
+  server does not answer: `DBConnection` then retries with a backoff.
+
+  ## Options
 
     * `:uri` - the server, `libsql://`, `https://` or `http://` (required);
     * `:auth_token` - the token of the database, if it needs one;
     * `:timeout` - how long to wait for a response, in ms (default 15 s);
-    * `:req_options` - options merged into the `Req` request.
+    * `:req_options` - options merged into the `Req` requests.
+
+  ## Parameters and values
+
+  Parameters are encoded as Hrana values:
+
+    * `nil` as NULL, integers as INTEGER, floats as REAL;
+    * `true` and `false` as `1` and `0`;
+    * strings as TEXT, and `{:blob, binary}` (or binaries that are not valid
+      UTF-8) as BLOB;
+    * `Decimal`, `Date`, `Time`, `NaiveDateTime` and `DateTime` as their text
+      (ISO 8601 for dates and times).
+
+  Results are decoded back to `nil`, integers, floats and binaries (TEXT and
+  BLOB alike), as `exqlite` returns them.
   """
   use DBConnection
 

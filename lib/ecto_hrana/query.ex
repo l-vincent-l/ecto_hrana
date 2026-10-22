@@ -1,7 +1,10 @@
 defmodule EctoHrana.Query do
   @moduledoc """
-  A SQL statement. Hrana runs statements from their text: nothing is prepared
-  on the server.
+  A SQL statement, with `?` or `?NNN` placeholders for its parameters.
+
+  Hrana runs statements from their text: nothing is prepared or cached on the
+  server, so preparing a query is free and a prepared query never goes stale.
+  `name` is kept for `DBConnection`'s and Ecto's statement caches.
   """
   defstruct name: "", statement: nil
 

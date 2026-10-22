@@ -8,8 +8,11 @@ loaders/dumpers and the constraint errors are `ecto_sqlite3`'s: only the driver
 (`EctoHrana.Connection`) is new.
 
 ```elixir
+defmodule MyApp.Repo do
+  use Ecto.Repo, otp_app: :my_app, adapter: Ecto.Adapters.Hrana
+end
+
 config :my_app, MyApp.Repo,
-  adapter: Ecto.Adapters.Hrana,
   uri: "libsql://my-db.turso.io",
   auth_token: System.fetch_env!("LIBSQL_AUTH_TOKEN")
 ```
