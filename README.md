@@ -20,3 +20,7 @@ config :my_app, MyApp.Repo,
 The tests and `bench/compare.exs` need a libSQL server:
 
     docker run -p 127.0.0.1:8080:8080 ghcr.io/tursodatabase/libsql-server:latest
+
+## License
+
+MIT, see [LICENSE](LICENSE).

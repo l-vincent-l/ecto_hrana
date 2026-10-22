@@ -10,12 +10,17 @@ defmodule EctoHrana.MixProject do
       deps: deps(),
       name: "EctoHrana",
       description: "Ecto adapter for libSQL servers (Turso, Bunny Database) over Hrana on HTTP",
-      docs: docs()
+      docs: docs(),
+      package: package()
     ]
   end
 
   def application do
     [extra_applications: [:logger]]
+  end
+
+  defp package do
+    [licenses: ["MIT"]]
   end
 
   defp docs do
